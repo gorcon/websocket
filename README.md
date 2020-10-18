@@ -1,4 +1,5 @@
 # Websocket
+[![golangci-lint](https://github.com/gorcon/websocket/workflows/golangci-lint/badge.svg)](https://github.com/gorcon/websocket/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gorcon/websocket)](https://goreportcard.com/report/github.com/gorcon/websocket)
 [![Build Status](https://travis-ci.org/gorcon/websocket.svg?branch=master)](https://travis-ci.org/gorcon/websocket)
 [![Coverage](https://gocover.io/_badge/github.com/gorcon/websocket?0 "coverage")](https://gocover.io/github.com/gorcon/websocket)
