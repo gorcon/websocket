@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -59,6 +60,13 @@ func mockHandlers() http.Handler {
 		case "status":
 			response = Message{
 				Message:    MockCommandStatusResponseText,
+				Identifier: message.Identifier,
+				Type:       "Generic",
+			}
+		case "deadline":
+			time.Sleep(DefaultDeadline + 1*time.Second)
+			response = Message{
+				Message:    fmt.Sprintf("sleep for %d secends", DefaultDeadline+1*time.Second),
 				Identifier: message.Identifier,
 				Type:       "Generic",
 			}

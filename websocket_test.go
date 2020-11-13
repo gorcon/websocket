@@ -3,6 +3,7 @@ package websocket
 import (
 	"fmt"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -74,6 +75,20 @@ func TestConn_Execute(t *testing.T) {
 		assert.Equal(t, 0, len(result))
 	})
 
+	t.Run("read deadline", func(t *testing.T) {
+		conn, err := Dial(server.Listener.Addr().String(), MockPassword, SetDeadline(1*time.Second))
+		if !assert.NoError(t, err) {
+			return
+		}
+		defer func() {
+			assert.NoError(t, conn.Close())
+		}()
+
+		result, err := conn.Execute("deadline")
+		assert.EqualError(t, err, fmt.Sprintf("read tcp %s->%s: i/o timeout", conn.LocalAddr(), conn.RemoteAddr()))
+		assert.Equal(t, 0, len(result))
+	})
+
 	t.Run("unknown command", func(t *testing.T) {
 		conn, err := Dial(server.Listener.Addr().String(), MockPassword)
 		if !assert.NoError(t, err) {
@@ -101,4 +116,42 @@ func TestConn_Execute(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, MockCommandStatusResponseText, result)
 	})
+
+	// Environment variable TEST_RUST_SERVER allows to sends commands to real
+	// Rust server.
+	//
+	// Some Rust commands:
+	// console.tail 5
+	// status
+	// playerlist
+	// serverinfo
+	if run := getVar("TEST_RUST_SERVER", "false"); run == "true" {
+		addr := getVar("TEST_RUST_SERVER_ADDR", "127.0.0.1:28016")
+		password := getVar("TEST_RUST_SERVER_PASSWORD", "docker")
+
+		t.Run("rust server", func(t *testing.T) {
+			conn, err := Dial(addr, password)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() {
+				assert.NoError(t, conn.Close())
+			}()
+
+			result, err := conn.Execute("status")
+			assert.NoError(t, err)
+			assert.NotEmpty(t, result)
+
+			fmt.Println(result)
+		})
+	}
+}
+
+// getVar returns environment variable or default value.
+func getVar(key string, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+
+	return fallback
 }

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v1.0.1] - 2020-11-14
+### Added
+- Added the ability to run the status command on a real Rust server. To do this, set environment variables `TEST_RUST_SERVER=true`, 
+`TEST_RUST_SERVER_ADDR` and `TEST_RUST_SERVER_PASSWORD` with address and password from Rust remote console.  
+- Added deadline test.  
+
+### Changed
+- Changed CI workflows and related badges. Integration with Travis-CI was changed to GitHub actions workflow. Golangci-lint 
+job was joined with tests workflow.  
+
 ## [v1.0.0] - 2020-11-13
 ### Added
 - Added mockserver and tests.
@@ -14,5 +24,6 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Initial implementation.
 
-[Unreleased]: https://github.com/gorcon/websocket/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/gorcon/websocket/compare/v1.0.1...HEAD
+[v1.0.1]: https://github.com/gorcon/websocket/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/gorcon/websocket/compare/v0.1.0...v1.0.0
