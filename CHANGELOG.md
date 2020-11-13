@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## v1.0.0 - 2020-11-13
+## [v1.0.0] - 2020-11-13
 ### Added
 - Added mockserver and tests.
 - Added `LocalAddr() net.Addr` and `RemoteAddr() net.Addr` functions that returns local and remote network addresses.
