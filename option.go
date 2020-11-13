@@ -2,7 +2,7 @@ package websocket
 
 import "time"
 
-// Settings contains option to Conn
+// Settings contains option to Conn.
 type Settings struct {
 	dialTimeout time.Duration
 	deadline    time.Duration

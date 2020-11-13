@@ -23,11 +23,7 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-
-    - name: golangci-lint
+    - name: Lint
       uses: golangci/golangci-lint-action@v2
       with:
         # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
@@ -42,6 +38,10 @@ jobs:
 
         # Optional: show only new issues if it's a pull request. The default value is `false`.
         only-new-issues: false
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
 
     - name: Test
       run: go test -v ./...
