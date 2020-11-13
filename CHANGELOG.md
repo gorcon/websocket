@@ -15,4 +15,4 @@ All notable changes to this project will be documented in this file.
 - Initial implementation.
 
 [Unreleased]: https://github.com/gorcon/websocket/compare/v1.0.0...HEAD
-[v1.0.0]: https://github.com/gorcon/rcon/compare/v0.1.0...v1.0.0
+[v1.0.0]: https://github.com/gorcon/websocket/compare/v0.1.0...v1.0.0
