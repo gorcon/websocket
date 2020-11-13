@@ -1,5 +1,5 @@
 # Websocket
-[![GitHub Build](https://github.com/gorcon/websocket/workflows/build/badge.svg)](https://github.com/gorcon/websocket/actions?query=workflow%3Abuild)
+[![GitHub Build](https://github.com/gorcon/websocket/workflows/build/badge.svg)](https://github.com/gorcon/websocket/actions)
 [![Coverage](https://gocover.io/_badge/github.com/gorcon/websocket?0 "coverage")](https://gocover.io/github.com/gorcon/websocket)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gorcon/websocket)](https://goreportcard.com/report/github.com/gorcon/websocket)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/gorcon/websocket)
