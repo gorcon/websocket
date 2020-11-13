@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"net"
 	"net/url"
 	"time"
 
@@ -103,6 +104,16 @@ func (c *Conn) Execute(command string) (string, error) {
 			return response.Message, nil
 		}
 	}
+}
+
+// LocalAddr returns the local network address.
+func (c *Conn) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
+// RemoteAddr returns the remote network address.
+func (c *Conn) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
 }
 
 // Close closes the connection.
