@@ -102,29 +102,31 @@ func TestDial(t *testing.T) {
 	defer server.Close()
 
 	t.Run("connection refused", func(t *testing.T) {
-		conn, err := Dial("127.0.0.2:12345", "password")
-		if !assert.Error(t, err) {
-			// Close connection if established.
-			assert.NoError(t, conn.Close())
-		}
+		wantErrContains := "connect: connection refused"
 
-		assert.EqualError(t, err, "dial tcp 127.0.0.2:12345: connect: connection refused")
+		_, err := Dial("127.0.0.2:12345", "password")
+		if err == nil || !strings.Contains(err.Error(), wantErrContains) {
+			t.Errorf("got err %q, want to contain %q", err, wantErrContains)
+		}
 	})
 
 	t.Run("authentication failed", func(t *testing.T) {
-		conn, err := Dial(server.Listener.Addr().String(), "wrong")
-		if !assert.Error(t, err) {
-			assert.NoError(t, conn.Close())
-		}
+		wantErrContains := "websocket: bad handshake"
 
-		assert.EqualError(t, err, "websocket: bad handshake")
+		_, err := Dial(server.Listener.Addr().String(), "wrong")
+		if err == nil || !strings.Contains(err.Error(), wantErrContains) {
+			t.Errorf("got err %q, want to contain %q", err, wantErrContains)
+		}
 	})
 
 	t.Run("auth success", func(t *testing.T) {
 		conn, err := Dial(server.Listener.Addr().String(), MockPassword, SetDialTimeout(5*time.Second))
-		if assert.NoError(t, err) {
-			assert.NoError(t, conn.Close())
+		if err != nil {
+			t.Errorf("got err %q, want %v", err, nil)
+			return
 		}
+
+		conn.Close()
 	})
 }
 
