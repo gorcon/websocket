@@ -1,7 +1,8 @@
-package websocket
+package websocket_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,13 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorcon/websocket"
+	gorilla "github.com/gorilla/websocket"
 )
 
-const MockPassword = "password"
-
-const MockCommandStatusResponseText = `status
+const StatusMessage = `status
 hostname: Rust Server [DOCKER]
 version : 2260 secure (secure mode enabled, connected to Steam3)
 map     : Procedural Map
@@ -29,10 +28,10 @@ id name ping connected addr owner violation kicks
 func handlers() http.Handler {
 	server := http.NewServeMux()
 
-	var upgrader = websocket.Upgrader{}
+	var upgrader = gorilla.Upgrader{}
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
-	server.HandleFunc("/"+MockPassword, func(w http.ResponseWriter, r *http.Request) {
+	server.HandleFunc("/password", func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Printf("upgrade error: %v\n", err)
@@ -41,7 +40,7 @@ func handlers() http.Handler {
 
 		defer ws.Close()
 
-		var response Message
+		var response websocket.Message
 
 		// Receive message.
 		_, p, err := ws.ReadMessage()
@@ -52,7 +51,7 @@ func handlers() http.Handler {
 			return
 		}
 
-		var message Message
+		var message websocket.Message
 		if err := json.Unmarshal(p, &message); err != nil {
 			// TODO: What Rust responses on read message fail?
 			fmt.Println(string(p))
@@ -62,20 +61,20 @@ func handlers() http.Handler {
 
 		switch message.Message {
 		case "status":
-			response = Message{
-				Message:    MockCommandStatusResponseText,
+			response = websocket.Message{
+				Message:    StatusMessage,
 				Identifier: message.Identifier,
 				Type:       "Generic",
 			}
 		case "deadline":
-			time.Sleep(DefaultDeadline + 1*time.Second)
-			response = Message{
-				Message:    fmt.Sprintf("sleep for %d secends", DefaultDeadline+1*time.Second),
+			time.Sleep(websocket.DefaultDeadline + 1*time.Second)
+			response = websocket.Message{
+				Message:    fmt.Sprintf("sleep for %d secends", websocket.DefaultDeadline+1*time.Second),
 				Identifier: message.Identifier,
 				Type:       "Generic",
 			}
 		default:
-			response = Message{
+			response = websocket.Message{
 				Message:    fmt.Sprintf("Command '%s' not found", message.Message),
 				Identifier: message.Identifier,
 				Type:       "Warning",
@@ -88,7 +87,7 @@ func handlers() http.Handler {
 			return
 		}
 
-		if err := ws.WriteMessage(websocket.TextMessage, js); err != nil {
+		if err := ws.WriteMessage(gorilla.TextMessage, js); err != nil {
 			log.Printf("write response error: %v\n", err)
 			return
 		}
@@ -104,7 +103,7 @@ func TestDial(t *testing.T) {
 	t.Run("connection refused", func(t *testing.T) {
 		wantErrContains := "connect: connection refused"
 
-		_, err := Dial("127.0.0.2:12345", "password")
+		_, err := websocket.Dial("127.0.0.2:12345", "password")
 		if err == nil || !strings.Contains(err.Error(), wantErrContains) {
 			t.Errorf("got err %q, want to contain %q", err, wantErrContains)
 		}
@@ -113,14 +112,14 @@ func TestDial(t *testing.T) {
 	t.Run("authentication failed", func(t *testing.T) {
 		wantErrContains := "websocket: bad handshake"
 
-		_, err := Dial(server.Listener.Addr().String(), "wrong")
+		_, err := websocket.Dial(server.Listener.Addr().String(), "wrong")
 		if err == nil || !strings.Contains(err.Error(), wantErrContains) {
 			t.Errorf("got err %q, want to contain %q", err, wantErrContains)
 		}
 	})
 
 	t.Run("auth success", func(t *testing.T) {
-		conn, err := Dial(server.Listener.Addr().String(), MockPassword, SetDialTimeout(5*time.Second))
+		conn, err := websocket.Dial(server.Listener.Addr().String(), "password", websocket.SetDialTimeout(5*time.Second))
 		if err != nil {
 			t.Errorf("got err %q, want %v", err, nil)
 			return
@@ -135,75 +134,101 @@ func TestConn_Execute(t *testing.T) {
 	defer server.Close()
 
 	t.Run("incorrect command", func(t *testing.T) {
-		conn, err := Dial(server.Listener.Addr().String(), MockPassword)
+		conn, err := websocket.Dial(server.Listener.Addr().String(), "password")
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("got err %q, want %v", err, nil)
 		}
-		defer func() {
-			assert.NoError(t, conn.Close())
-		}()
+		defer conn.Close()
 
 		result, err := conn.Execute("")
-		assert.Equal(t, err, ErrCommandEmpty)
-		assert.Equal(t, 0, len(result))
+		if !errors.Is(err, websocket.ErrCommandEmpty) {
+			t.Errorf("got err %q, want %q", err, websocket.ErrCommandEmpty)
+		}
+
+		if len(result) != 0 {
+			t.Fatalf("got result len %d, want %d", len(result), 0)
+		}
 
 		result, err = conn.Execute(string(make([]byte, 1001)))
-		assert.Equal(t, err, ErrCommandTooLong)
-		assert.Equal(t, 0, len(result))
+		if !errors.Is(err, websocket.ErrCommandTooLong) {
+			t.Errorf("got err %q, want %q", err, websocket.ErrCommandTooLong)
+		}
+
+		if len(result) != 0 {
+			t.Fatalf("got result len %d, want %d", len(result), 0)
+		}
 	})
 
 	t.Run("closed network connection", func(t *testing.T) {
-		conn, err := Dial(server.Listener.Addr().String(), MockPassword)
-		if !assert.NoError(t, err) {
-			return
+		conn, err := websocket.Dial(server.Listener.Addr().String(), "password")
+		if err != nil {
+			t.Fatalf("got err %q, want %v", err, nil)
 		}
-		assert.NoError(t, conn.Close())
+		conn.Close()
 
 		result, err := conn.Execute("status")
-		assert.EqualError(t, err, fmt.Sprintf("write tcp %s->%s: use of closed network connection", conn.LocalAddr(), conn.RemoteAddr()))
-		assert.Equal(t, 0, len(result))
+		wantErrMsg := fmt.Sprintf("write tcp %s->%s: use of closed network connection", conn.LocalAddr(), conn.RemoteAddr())
+		if err == nil || err.Error() != wantErrMsg {
+			t.Errorf("got err %q, want to contain %q", err, wantErrMsg)
+		}
+
+		if len(result) != 0 {
+			t.Fatalf("got result len %d, want %d", len(result), 0)
+		}
 	})
 
 	t.Run("read deadline", func(t *testing.T) {
-		conn, err := Dial(server.Listener.Addr().String(), MockPassword, SetDeadline(1*time.Second))
-		if !assert.NoError(t, err) {
-			return
+		conn, err := websocket.Dial(server.Listener.Addr().String(), "password", websocket.SetDeadline(1*time.Second))
+		if err != nil {
+			t.Fatalf("got err %q, want %v", err, nil)
 		}
-		defer func() {
-			assert.NoError(t, conn.Close())
-		}()
+		defer conn.Close()
 
 		result, err := conn.Execute("deadline")
-		assert.EqualError(t, err, fmt.Sprintf("read tcp %s->%s: i/o timeout", conn.LocalAddr(), conn.RemoteAddr()))
-		assert.Equal(t, 0, len(result))
+		wantErrMsg := fmt.Sprintf("read tcp %s->%s: i/o timeout", conn.LocalAddr(), conn.RemoteAddr())
+		if err == nil || err.Error() != wantErrMsg {
+			t.Errorf("got err %q, want to contain %q", err, wantErrMsg)
+		}
+
+		if len(result) != 0 {
+			t.Fatalf("got result len %d, want %d", len(result), 0)
+		}
 	})
 
 	t.Run("unknown command", func(t *testing.T) {
-		conn, err := Dial(server.Listener.Addr().String(), MockPassword)
-		if !assert.NoError(t, err) {
-			return
+		conn, err := websocket.Dial(server.Listener.Addr().String(), "password")
+		if err != nil {
+			t.Fatalf("got err %q, want %v", err, nil)
 		}
-		defer func() {
-			assert.NoError(t, conn.Close())
-		}()
+		defer conn.Close()
 
 		result, err := conn.Execute("random")
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf("Command '%s' not found", "random"), result)
+		if err != nil {
+			t.Fatalf("got err %q, want %v", err, nil)
+		}
+
+		resultWant := fmt.Sprintf("Command '%s' not found", "random")
+		if result != resultWant {
+			t.Fatalf("got result %q, want %q", result, resultWant)
+		}
 	})
 
 	t.Run("success command", func(t *testing.T) {
-		conn, err := Dial(server.Listener.Addr().String(), MockPassword)
-		if !assert.NoError(t, err) {
-			return
+		conn, err := websocket.Dial(server.Listener.Addr().String(), "password")
+		if err != nil {
+			t.Fatalf("got err %q, want %v", err, nil)
 		}
-		defer func() {
-			assert.NoError(t, conn.Close())
-		}()
+		defer conn.Close()
 
 		result, err := conn.Execute("status")
-		assert.NoError(t, err)
-		assert.Equal(t, MockCommandStatusResponseText, result)
+		if err != nil {
+			t.Fatalf("got err %q, want %v", err, nil)
+		}
+
+		resultWant := StatusMessage
+		if result != resultWant {
+			t.Fatalf("got result %q, want %q", result, resultWant)
+		}
 	})
 
 	// Environment variable TEST_RUST_SERVER allows to sends commands to real
@@ -219,17 +244,20 @@ func TestConn_Execute(t *testing.T) {
 		password := getVar("TEST_RUST_SERVER_PASSWORD", "docker")
 
 		t.Run("rust server", func(t *testing.T) {
-			conn, err := Dial(addr, password)
+			conn, err := websocket.Dial(addr, password)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("got err %q, want %v", err, nil)
 			}
-			defer func() {
-				assert.NoError(t, conn.Close())
-			}()
+			defer conn.Close()
 
 			result, err := conn.Execute("status")
-			assert.NoError(t, err)
-			assert.NotEmpty(t, result)
+			if err != nil {
+				t.Fatalf("got err %q, want %v", err, nil)
+			}
+
+			if len(result) == 0 {
+				t.Fatal("got result len 0, want not 0")
+			}
 
 			fmt.Println(result)
 		})

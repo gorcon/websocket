@@ -63,9 +63,9 @@ func Dial(address string, password string, options ...Option) (*Conn, error) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	c := Conn{conn: conn, settings: settings}
+	client := Conn{conn: conn, settings: settings}
 
-	return &c, nil
+	return &client, nil
 }
 
 // Execute sends command string to execute to the remote server.
