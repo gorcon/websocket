@@ -167,7 +167,7 @@ func TestConn_Execute(t *testing.T) {
 		conn.Close()
 
 		result, err := conn.Execute("status")
-		wantErrMsg := fmt.Sprintf("write tcp %s->%s: use of closed network connection", conn.LocalAddr(), conn.RemoteAddr())
+		wantErrMsg := fmt.Sprintf("webrcon: write tcp %s->%s: use of closed network connection", conn.LocalAddr(), conn.RemoteAddr())
 		if err == nil || err.Error() != wantErrMsg {
 			t.Errorf("got err %q, want to contain %q", err, wantErrMsg)
 		}
@@ -185,7 +185,7 @@ func TestConn_Execute(t *testing.T) {
 		defer conn.Close()
 
 		result, err := conn.Execute("deadline")
-		wantErrMsg := fmt.Sprintf("read tcp %s->%s: i/o timeout", conn.LocalAddr(), conn.RemoteAddr())
+		wantErrMsg := fmt.Sprintf("webrcon: read tcp %s->%s: i/o timeout", conn.LocalAddr(), conn.RemoteAddr())
 		if err == nil || err.Error() != wantErrMsg {
 			t.Errorf("got err %q, want to contain %q", err, wantErrMsg)
 		}

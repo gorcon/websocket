@@ -3,6 +3,7 @@ package websocket
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"net/url"
@@ -58,7 +59,7 @@ func Dial(address string, password string, options ...Option) (*Conn, error) {
 			return nil, ErrAuthFailed
 		}
 
-		return nil, err
+		return nil, fmt.Errorf("webrcon: %w", err)
 	}
 
 	rand.Seed(time.Now().UnixNano())
@@ -82,7 +83,7 @@ func (c *Conn) Execute(command string) (string, error) {
 
 	data, err := json.Marshal(request)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("webrcon: %w", err)
 	}
 
 	if err := c.write(data); err != nil {
@@ -97,7 +98,7 @@ func (c *Conn) Execute(command string) (string, error) {
 
 		var response Message
 		if err := json.Unmarshal(p, &response); err != nil {
-			return "", err
+			return "", fmt.Errorf("webrcon: %w", err)
 		}
 
 		if response.Identifier == request.Identifier {
@@ -124,21 +125,28 @@ func (c *Conn) Close() error {
 func (c *Conn) write(data []byte) error {
 	if c.settings.deadline != 0 {
 		if err := c.conn.SetWriteDeadline(time.Now().Add(c.settings.deadline)); err != nil {
-			return err
+			return fmt.Errorf("webrcon: %w", err)
 		}
 	}
 
-	return c.conn.WriteMessage(websocket.TextMessage, data)
+	if err := c.conn.WriteMessage(websocket.TextMessage, data); err != nil {
+		return fmt.Errorf("webrcon: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Conn) read() ([]byte, error) {
 	if c.settings.deadline != 0 {
 		if err := c.conn.SetReadDeadline(time.Now().Add(c.settings.deadline)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("webrcon: %w", err)
 		}
 	}
 
 	_, p, err := c.conn.ReadMessage()
+	if err != nil {
+		return p, fmt.Errorf("webrcon: %w", err)
+	}
 
-	return p, err
+	return p, nil
 }

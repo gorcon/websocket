@@ -127,4 +127,5 @@ issues:
   exclude:
     - "G404: Use of weak random number generator \\(math/rand instead of crypto/rand\\)" # gosec
     - "shadow: declaration of \"err\"" # govet
-    - "`DefaultSettings` is a global variable" # gochecknoglobals
+    - "DefaultSettings`? is a global variable" # gochecknoglobals
+    - "are|is missing in" # exhaustivestruct # v1.33

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v1.1.1] - 2021-01-06
+### Updated
+- Updated golangci linter to 1.33 version
+
+### Changed
+- Changed errors handling - added wrapping.
+
 ## [v1.1.0] - 2020-12-14
 ### Changed
 - Replaced testify/assert to native tests.
@@ -28,7 +35,8 @@ job was joined with tests workflow.
 ### Added
 - Initial implementation.
 
-[Unreleased]: https://github.com/gorcon/websocket/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/gorcon/websocket/compare/v1.0.1...HEAD
+[v1.1.0]: https://github.com/gorcon/websocket/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/gorcon/websocket/compare/v1.0.1...v1.1.0
 [v1.0.1]: https://github.com/gorcon/websocket/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/gorcon/websocket/compare/v0.1.0...v1.0.0
