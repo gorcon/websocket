@@ -122,6 +122,10 @@ linters:
   enable-all: true
   disable:
     - gomnd
+    - depguard
+    - tagliatelle
+    - varnamelen
+    - wrapcheck
 
 issues:
   exclude:
