@@ -1,6 +1,11 @@
 package websocket
 
-import "math/rand"
+import (
+	"math/rand"
+	"time"
+)
+
+const RandIdentifierLimit = 1000
 
 // Message is both requests and responses are sent as packets wia WebSocket.
 // Their payload follows the following basic structure.
@@ -28,6 +33,6 @@ type Message struct {
 func newMessage(command string) *Message {
 	return &Message{
 		Message:    command,
-		Identifier: rand.Intn(1000),
+		Identifier: rand.New(rand.NewSource(time.Now().UnixNano())).Intn(RandIdentifierLimit),
 	}
 }

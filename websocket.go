@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net"
 	"net/url"
 	"time"
@@ -61,8 +60,6 @@ func Dial(address string, password string, options ...Option) (*Conn, error) {
 
 		return nil, fmt.Errorf("webrcon: %w", err)
 	}
-
-	rand.Seed(time.Now().UnixNano())
 
 	client := Conn{conn: conn, settings: settings}
 
